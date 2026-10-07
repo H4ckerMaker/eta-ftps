@@ -26,6 +26,19 @@ with open("csv_file.csv","r", newline="") as f:
         flow_mean_interarrival_time = np.mean(flow_interarrival_times)
         flow_bytes_per_sec = flow_total_bytes / flow_duration
         flow_package_per_sec = flow_packet_count / flow_duration
+        label = ""
+        if 'ftps' in row[0]:
+            label = "FTPS"
+        elif 'chat' in row[0]:
+            label = "CHAT"
+        elif 'video' in row[0]:
+            label = 'VIDEO'
+        elif 'browsing' in row[0]:
+            label = 'BROWSING'
+        elif 'audio' in row[0]:
+            label = 'AUDIO'
+        else: label = "OTHER"
+        
         flow_feature = {
                 "packet_count": flow_packet_count,
                 "total_bytes": flow_total_bytes,
@@ -37,6 +50,8 @@ with open("csv_file.csv","r", newline="") as f:
                 "max_interarrival_time": flow_max_interarrival_time,
                 "mean_interarrival_time": flow_mean_interarrival_time,
                 "bytes_per_sec": flow_bytes_per_sec,
-                "package_per_sec": flow_package_per_sec
+                "package_per_sec": flow_package_per_sec,
+                "label": label
         }
+            
         extracted_feature.append(flow_feature)
