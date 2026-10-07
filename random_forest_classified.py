@@ -4,13 +4,29 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import csv_parser
+
+
 
 network_flows = []
 
+files = [
+    r"C:\Users\Fabian\Downloads\classes_csvs-3\classes_csvs-3\voip\reg\iscx_voip.raw.csv",
+    r"C:\Users\Fabian\Downloads\classes_csvs-3\classes_csvs-3\chat\reg\iscx_chat.raw.csv",
+    r"C:\Users\Fabian\Downloads\classes_csvs-3\classes_csvs-3\video\reg\iscx_video.raw.csv",
+    r"C:\Users\Fabian\Downloads\classes_csvs-3\classes_csvs-3\file_transfer\reg\iscx_file.raw.csv"
+]
+
+network_flows = []
+for file_path in files:
+  network_flows.extend(csv_parser.extract_features(file_path))
+
 df = pd.DataFrame(network_flows)
 
-print(f'Geladene Flows: {len(df)}')
-print('Verteilung:\n', df['label'].value_counts())
+
+
+print(f'Flows: {len(df)}')
+print('Distr of each type:\n', df['label'].value_counts())
 
 X = df.drop(columns=['label']) # drops column label, 
 y = df['label'] # loads only column label
@@ -44,8 +60,8 @@ print(classification_report(y_test, y_pred, digits=4))
 
 print('confusion matrix and importances')
 labels = sorted(y.unique())
-conf_matr = confusion_matrix(y_test, y_pred, labels=labels)
-print(pd.DataFrame(confusion_matrix, index=labels, columns=labels))
+confusion_matr = confusion_matrix(y_test, y_pred, labels=labels)
+print(pd.DataFrame(confusion_matr, index=labels, columns=labels))
 
 importances = pd.Series(classifier.feature_importances_, index=X.columns).sort_values(
     ascending=False
