@@ -34,7 +34,7 @@ def extract_features(filepath):
                 label = "CHAT"
             elif 'video' in row[0]:
                 label = 'VIDEO'
-            elif 'browsing' in row[0]:
+            elif 'Browsing' in row[0]:
                 label = 'BROWSING'
             elif 'audio' in row[0]:
                 label = 'AUDIO'
