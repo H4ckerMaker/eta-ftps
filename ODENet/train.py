@@ -27,8 +27,14 @@ def evaluate(model, loader, device, n_classes):
     return float((p == y).mean()), macro_f1(y, p, n_classes)
 
 
-def main(n=20,seed=3):
-    flows = extract_features('csv_file.csv') #TODO: import all the flows for data training
+def main(n=20, epochs=25, batch_size=128, lr=1e-3, model_name="ode", seed=0):
+    flows = extract_features('/classes_csvs/browsing/reg/CICNTTor_browsing.raw.csv')
+    flows.append(extract_features('/classes_csvs/chat/reg/iscx_chat.raw.csv'))
+    flows.append(extract_features('/classes_csvs/chat/reg/my_chat.raw.csv'))
+    flows.append(extract_features('/classes_csvs/file_trasfer/reg/iscx_file.raw.csv'))
+    flows.append(extract_features('/classes_csvs/video/reg/iscx_video.raw.csv'))
+    flows.append(extract_features('/classes_csvs/voip/reg/iscx_video_voip.raw.csv'))
+    flows.append(extract_features('/classes_csvs/voip/reg/iscx_voip.raw.csv'))
     label_map = make_label_map(flows)
     n_classes = len(label_map)
     print("classes:", label_map)
