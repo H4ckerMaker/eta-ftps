@@ -1,4 +1,10 @@
 # Encrypted Traffic Analysis for FTPS connection
+## Short Description of the Project/ Documentation of the Project
+The goal of our project is to classify encrypted network traffic of different protocols such as audio recordings, file transfers, browsing, chatting and streaming videos. This was done by capturing 20 files of each protocol and thereafter testing the model by //NEEDS MORE//. 
+
+The parameters used for classification were selected by reading previous research and reports at KTH Library regarding the subject and choosing the parameters used in the papers most applicable to our project. Information regarding the previous research used for the project can be found further down in the README. 
+## How to Run the Code/ Documentation of Testing the Project
+
 ## Previous Research
 Previous research regarding encrypted network traffic analysis has shown that using packet sizes and inter-arrival times as classification parameters only required 10-30 packets and resulted in sufficient classification accuracy (Roy, Shapira & Shavitt, 2022). Similarly, another research investigates traffic classification regarding flow features including packet sizes, inter-arrival times and packet directions (Lu, G. et al., 2012). 
 ## How It Applies to Our Project
