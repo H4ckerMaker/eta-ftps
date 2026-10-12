@@ -13,6 +13,13 @@ def split_by_flow(flows, test_threshold=0.2, seed=0):
     k = int(len(flows) * (1-test_threshold))
     return [flows[i] for i in order[:k]], [flows[i] for i in order[k:]]
 
+def undersample(X, y, seed=0):
+    rng = np.random.default_rng(seed)
+    classes, counts = np.unique(y, return_counts=True) #This will find how many classes there are and for each counts the number of blocks
+    m = counts.min() #This will take the minimum number of blocks in the group of classes
+    idx = np.concatenate([rng.choice(np.where(y == c)[0], m, replace=False) for c in classes]) #for each classes we choose m blocks randomly and then we concatenate them
+    rng.shuffle(idx) #we shuffle the concatenation to redistribute the blocks of each classes randomly inside tha vector
+    return X[idx], y[idx] #we select from original data just the blocks with indices obtained by this function
 
 def build_blocks(flows, n=20, stride=None, label_map=None):
     stride = stride or n #if stride is set take it otherwise take n (if stride < n it cause overlapping blocks)
