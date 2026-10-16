@@ -4,6 +4,8 @@ The goal of our project is to classify encrypted network traffic of different pr
 
 The parameters used for classification were selected by reading previous research and reports at KTH Library regarding the subject and choosing the parameters used in the papers most applicable to our project. Information regarding the previous research used for the project can be found further down in the README. 
 
+The data captured with the audio files were collected by having audio files on a server, then listening to the audio files on the computer whilst recording the network traffic on the server and saving it in .pcap files. 
+
 With the complex model, we achieved an accuracy of 90% on the data provided by us. 
 ## How to Run the Code/ Documentation of Testing the Project
 
