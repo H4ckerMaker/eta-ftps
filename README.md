@@ -9,6 +9,79 @@ The data captured with the audio files were collected by having audio files on a
 With the complex model, we achieved an accuracy of 90% on the data provided by us. 
 ## How to Run the Code/ Documentation of Testing the Project
 
+### Build and test on the Random Forest Classification model
+
+TODO
+
+## ODENet: build, train and test
+
+### Requirements
+
+- Python **3.11 – 3.13**. Very recent Python releases may not have PyTorch wheels yet; in that case `pip` fails with `No matching distribution found for torch`.
+- `requirements.txt` must include `torch`, `numpy` and `scapy` (scapy is used to read PCAP files).
+
+### Dataset layout
+
+Put the captures in one folder per class:
+
+```
+dataset/
+├── BROWSING/        *.pcap
+├── CHAT/            *.pcap
+├── FILE_TRANSFER/   *.pcap
+└── STREAMING/       *.pcap
+```
+
+The folder name is the class label.
+
+### 1. Set up the environment
+
+```bash
+cd ODENet
+python3 -m venv .venv
+.venv/bin/python3 -m pip install -r requirements.txt
+```
+
+### 2. Convert the PCAP files to CSV
+
+```bash
+.venv/bin/python3 pcap_to_csv.py dataset/CHAT --name my_chat
+.venv/bin/python3 pcap_to_csv.py dataset/STREAMING --name my_streaming
+.venv/bin/python3 pcap_to_csv.py dataset/BROWSING --name my_browsing
+.venv/bin/python3 pcap_to_csv.py dataset/FILE_TRANSFER --name my_filetransfer
+```
+
+Each CSV row is one unidirectional flow (5-tuple). The files are written to `classes_csvs/<class>/reg/<name>.raw.csv`.
+
+- Flows shorter than 20 packets are discarded (`--min-packets`).
+- An existing CSV is not overwritten unless you pass `--force`.
+
+### 3. Train the model
+
+```bash
+.venv/bin/python3 train.py
+```
+
+`train.py` loads every `classes_csvs/*/reg/my_*.raw.csv`, splits the flows 80/20 (train/test), balances the training set and trains for 100 epochs. At the end it prints the macro-F1 and the confusion matrix.
+
+The best checkpoint is saved as `best_<model>_n<n>.pt` (e.g. `best_ode_n20.pt` for the default ODE-LSTM). The model is selected with `model_name` in `main()`: `ode`, `lstm_size` or `lstm_both`.
+
+The class order is alphabetical and is printed at the start of training (`classes: {...}`). You need it in the next step.
+
+### 4. Classify an external capture
+
+```bash
+.venv/bin/python3 predict.py capture.pcap --ckpt best_ode_n20.pt --classes BROWSING,CHAT,FILE_TRANSFER,STREAMING
+```
+
+The script prints the longest flows with their predicted class and confidence, and a summary with the share of traffic per class.
+
+- `--classes` must follow the training order. It can be omitted if the checkpoint already stores the class names.
+- `--n` must match the value used in training (default 20).
+- A `.csv` file in the same format as the training CSVs is also accepted as input.
+
+> **Note:** a capture must be converted the same way as the training data (same packet-size definition and protocols), otherwise the predictions degrade. The model always picks one of its own classes, so unrelated traffic (DNS, telemetry) is also assigned a class.
+
 ## Previous Research
 Previous research regarding encrypted network traffic analysis has shown that using packet sizes and inter-arrival times as classification parameters only required 10-30 packets and resulted in sufficient classification accuracy (Roy, Shapira & Shavitt, 2022). Similarly, another research investigates traffic classification regarding flow features including packet sizes, inter-arrival times and packet directions (Lu, G. et al., 2012). 
 ## How It Applies to Our Project
