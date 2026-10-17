@@ -22,7 +22,7 @@ Application payloads are **never decrypted**. Classification relies only on meta
  
 For each category we captured repeated experiments and saved the traffic as `.pcap` files.
  
-For the **streaming** class, TODO
+For the **streaming** class, we recorded some audio clips, then uploaded them to our server and split them into random sized audio snippets. We then listened to the audio snippets on our computer whilst using tcpdump on the server to record the traffic. Additionally, for the video streaming we TODO 
 
 For the **file transfer** class, we used a script to create and upload/download random files to our server using different protocols such as scp and ftps.
 
