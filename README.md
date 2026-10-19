@@ -143,3 +143,9 @@ Roy, S., Shapira, T., & Shavitt, Y. (2022). Fast and lean encrypted Internet tra
 
 Lu, G. et al. (2012) ‘Comparison and Analysis of Flow Features at the Packet Level for Traffic Classification’, in 2012 International Conference on Connected Vehicles and Expo (ICCVE). [Online]. December 2012 IEEE. pp. 262–267.
 
+
+### 5. Own contributions
+
+## Ella Hedberg
+I contributed by writing about the sources and reasoning behind the choices regarding the classification, ie. the packet sizes and inter-arrival times. The sources were found by looking up relevant sources in the KTH library and reading each one to find the ones that were the most fitting. Several sources had to be read and analysed since only a few did what we wanted to initially do over FTPS. This text can be found in an old commit, Commit 3476d0b. These were however discarded due to the changes in the project. I also contributed by adding 80+ network traffic files. This was done by initially recording streaming files of several minutes long and transferring them onto the server. I then cut them into smaller streaming files and listened to them on my own computer whilst recording the network traffic from the server using tcpdump. Additionally, I arranged the meetings with the group. 
+
