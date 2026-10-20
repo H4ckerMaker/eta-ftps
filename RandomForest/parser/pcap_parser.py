@@ -1,19 +1,29 @@
-from scapy.all import rdpcap, IP, TCP
+from scapy.all import rdpcap, IP, TCP, UDP
 import statistics
 
+
+# Return all inter_arrival_times for packets in flow
 def inter_arrival_times(packets):
-    """
-    Return an array of each inter_arrival_time for each packet in a flow
-    """
     return [
         packets[i]["timestamp"] - packets[i - 1]["timestamp"]
         for i in range(1, len(packets))
     ]
 
+#(src_ip:src_port, dst_ip:dst_port) for a packet
+def flow_key(packet):
+    endpoint1 = (
+        packet["src_ip"],
+        packet["src_port"]
+    )
+    endpoint2 = (
+        packet["dst_ip"],
+        packet["dst_port"]
+    )
+    return tuple(sorted([endpoint1, endpoint2]))
+
+# return features for a flow
 def extract_features(flow):
-    """
-    Return a dictionary of features for a flow
-    """
+
     packets = flow["packets"]
     lengths = [p["length"] for p in packets]
     iats = inter_arrival_times(packets)
@@ -30,8 +40,8 @@ def extract_features(flow):
         "backward_packet_count" : len(backward),
         "forward_bytes" : sum(p["length"] for p in forward),
         "backward_bytes" : sum(p["length"] for p in backward),
-        "forward_mean_packet_size" : statistics.mean([p["length"] for p in forward]),
-        "backward_mean_packet_size" : statistics.mean([p["length"] for p in backward]),
+        "forward_mean_packet_size" : statistics.mean([p["length"] for p in forward]) if forward else 0,
+        "backward_mean_packet_size" : statistics.mean([p["length"] for p in backward]) if backward else 0,
         "mean_packet_length": statistics.mean(lengths),
         "std_packet_length": (
             statistics.stdev(lengths)
@@ -51,46 +61,40 @@ def extract_features(flow):
     }
     return features
 
+# Return the list of packets that have a TCP/IP or UDP/IP protocol combo
 def extract_packets(capture):
-    """
-    Return the list of packets that have a TCP/IP protocol combo in a capture
-    """
     packets = []
     for packet in capture:
-        if not packet.haslayer(IP) or not packet.haslayer(TCP):
+        if not packet.haslayer(IP):
             continue
+            
+        if packet.haslayer(TCP):
+            layer = packet[TCP]
+            flags = int(layer.flags)
+            proto = "TCP"
+        elif packet.haslayer(UDP):
+            layer = packet[UDP]
+            flags = 0  # UDP does not have flags
+            proto = "UDP"
+        else:
+            continue  # Skip ICMP, ARP, etc.
+
         ip = packet[IP]
-        tcp = packet[TCP]
         packets.append({
             "timestamp" : float(packet.time),
             "src_ip" : ip.src,
             "dst_ip" : ip.dst,
-            "src_port" : tcp.sport,
-            "dst_port" : tcp.dport,
+            "src_port" : layer.sport,
+            "dst_port" : layer.dport,
             "length" : len(packet),
-            "payload_length" : len(tcp.payload),
-            "flags": int(tcp.flags)
+            "payload_length" : len(layer.payload),
+            "flags": flags,
+            "protocol": proto
         })
     return packets
 
-def flow_key(packet):
-    """
-    Return the tuple (src_ip:src_port, dst_ip:dst_port) for a packet
-    """
-    endpoint1 = (
-        packet["src_ip"],
-        packet["src_port"]
-    )
-    endpoint2 = (
-        packet["dst_ip"],
-        packet["dst_port"]
-    )
-    return tuple(sorted([endpoint1, endpoint2]))
-
+#return single flows for packets
 def build_flows(packets):
-    """
-    Return single flows for a given list of packets
-    """
     flows = {}
     for packet in packets:
         key = flow_key(packet)
@@ -101,22 +105,25 @@ def build_flows(packets):
                 "packets": []
             }
         flows[key]["packets"].append(packet)
+        
     for flow in flows.values():
         initiator = None
         for packet in flow["packets"]:
-            syn = packet["flags"] & 0x02
-            ack = packet["flags"] & 0x10
-            if syn and not ack:
-                initiator = (
-                    packet["src_ip"],
-                    packet["src_port"]
-                )
+            if packet["protocol"] == "TCP":
+                syn = packet["flags"] & 0x02
+                ack = packet["flags"] & 0x10
+                if syn and not ack:
+                    initiator = (packet["src_ip"], packet["src_port"])
+                    break
+            elif packet["protocol"] == "UDP":
+                initiator = (packet["src_ip"], packet["src_port"])
                 break
+                
+        if initiator is None and len(flow["packets"]) > 0:
+            initiator = (flow["packets"][0]["src_ip"], flow["packets"][0]["src_port"])
+
         for packet in flow["packets"]:
-            src = (
-                packet["src_ip"],
-                packet["src_port"]
-            )
+            src = (packet["src_ip"], packet["src_port"])
             if initiator is not None:
                 if src == initiator:
                     packet["direction"] = "forward"
@@ -124,4 +131,5 @@ def build_flows(packets):
                     packet["direction"] = "backward"
             else:
                 packet["direction"] = "unknown"
+                
     return flows
