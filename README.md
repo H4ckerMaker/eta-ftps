@@ -75,10 +75,40 @@ As a simple baseline, we trained a Random Forest classifier to distinguish the f
 - **Training:** each capture is split into flows, and every flow is represented by its three features. The model is trained on these flow-level samples, using the category of the capture as the label.
 - **Validation:** for each capture, the model classifies every flow individually. The capture is then assigned to the category that receives the most votes (**majority voting**).
 
-During the testing of the dataset with the same captures we got a good accuracy: TODO, but when using new capture files from newly generate.......
+#### 3.1. Limitations: Overfitting
+
+When evaluated on a held-out split of our own dataset, the model reached a high accuracy (**TODO**). However, when tested on new captures from real sessions recorded independently, the accuracy dropped drastically (**TODO**). This indicates that the model was **overfitting** the training set.
+
+We realised that the three initial features do not describe the *behaviour of the protocol*, but only the **volume of data** and the **length of the session**. As a result, the classifier can be easily misled: a 40-second session of one category may look very similar to a 40-second session of another, while two sessions of the same category with different durations (e.g. 2 s and 40 s) may be assigned to different classes.
+
+#### 3.2. Improved Feature Set
+
+To address this, we extended the feature set with additional aggregated features that describe the packet size distribution and the traffic rhythm, rather than its overall volume:
+
+4. `mean_packet_size`: average packet size
+5. `min_packet_size`: smallest packet size
+6. `max_packet_size`: largest packet size
+7. `min_interarrival_time`: shortest gap between consecutive packets
+8. `max_interarrival_time`: longest gap between consecutive packets
+9. `mean_interarrival_time`: average gap between consecutive packets
+10. `bytes_per_sec`: average throughput in bytes per second
+11. `packets_per_sec`: average packet rate
+
+We chose these features because they are largely **independent of the session's duration and total size**. With this richer feature set, the model also performed well on the external real-world captures (**TODO: accuracy**).
  
 ### 4. Limitations of the baseline
 
+We then tried to make the evaluation more realistic. So far, each external capture was given to the model as a **complete session**. A real attacker, however, has no such guarantee: the capture may start in the middle of a session (after some packets have already been exchanged) or end before the session is closed.
+
+To test this scenario, we fed the Random Forest classifier **truncated captures** of incomplete sessions for each category. The results were poor, with a very low accuracy (**TODO**).
+
+This happens because aggregated features are a poor representation of real-time traffic. They summarise the flow as a whole, so they implicitly assume that the **entire session** is available:
+
+- **They depend on the observation window.** Statistics such as `mean_packet_size` or `max_interarrival_time` change when the beginning or the end of the session is missing, so a truncated capture produces feature values that the model never saw during training.
+- **They lose temporal information.** Aggregation discards the order of the packets and the evolution of the traffic over time (bursts, pauses, periodic patterns), which are exactly the characteristics that distinguish one protocol from another.
+- **They rely on distinctive phases of the session.** Connection setup and teardown are often highly informative, but a partial capture may not include them.
+
+For this reason, we decided to move to a model that can represent real-time traffic well, one that works directly on the **sequence of packets** rather than on session-level summaries, and can therefore classify a flow even from a partial observation.
 
 ### 5. A better-suited model? ODE-LSTM
  
