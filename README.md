@@ -77,7 +77,7 @@ As a simple baseline, we trained a Random Forest classifier to distinguish the f
 
 #### 3.1. Limitations: Overfitting
 
-When evaluated on a held-out split of our own dataset, the model reached a high accuracy (**TODO**). However, when tested on new captures from real sessions recorded independently, the accuracy dropped drastically (**TODO**). This indicates that the model was **overfitting** the training set.
+When evaluated on a held-out split of our own dataset, the model reached a high accuracy (**0.9807**). However, when tested on new captures from real sessions recorded independently, the accuracy dropped drastically (**0.5322**). This indicates that the model was **overfitting** the training set.
 
 We realised that the three initial features do not describe the *behaviour of the protocol*, but only the **volume of data** and the **length of the session**. As a result, the classifier can be easily misled: a 40-second session of one category may look very similar to a 40-second session of another, while two sessions of the same category with different durations (e.g. 2 s and 40 s) may be assigned to different classes.
 
@@ -130,16 +130,20 @@ Both models were trained and evaluated on the same data and compared on previous
 | Model | Input | Full sessions (accuracy) | Partial captures (accuracy) |
 |---|---|---|---|
 | Random Forest | 11 aggregated flow features | **TODO** | **TODO** |
-| ODE-LSTM | Packet sequence (size, inter-arrival time) | N/A | **TODO** |
+| ODE-LSTM | Packet sequence (size, inter-arrival time) | N/A | 0.9088 |
 
-**Evaluation setup.** The test set consists of real captures recorded independently from the training data. We evaluated both models in two scenarios:
+**Evaluation setup.** The test set consists of real captures recorded independently from the training data. We evaluated Random Forest in two scenarios:
 
 - **Full sessions:** each capture contains the entire session, from start to end.
 - **Partial captures:** each capture is truncated, simulating an attacker who starts or stops sniffing at an arbitrary point of the session.
 
+and ODE-LSTM on just one scenario:
+
+- **Partial captures**
+
 ## Results
 
-On complete sessions, **TODO: summarise the result (e.g. both models perform comparably well)**. The difference emerges on partial captures: the Random Forest, which relies on session-level statistics, **TODO: accuracy drop**, while the ODE-LSTM, which works directly on the packet sequence, **TODO: result**.
+On complete sessions, **TODO: summarise the result. The difference emerges on partial captures: the Random Forest, which relies on session-level statistics, **TODO: accuracy drop**, while the ODE-LSTM, which works directly on the packet sequence, acc: 0.9088.
 
 Overall, these results suggest that sequence-based models are better suited to realistic, real-time traffic analysis, while aggregated features are sufficient only when the full session is available.
  
@@ -290,7 +294,7 @@ Each CSV row is one unidirectional flow (5-tuple). The files are written to `cla
 
 The best checkpoint is saved as `best_<model>_n<n>.pt` (e.g. `best_ode_n20.pt` for the default ODE-LSTM). The model is selected with `model_name` in `main()`: `ode`, `lstm_size` or `lstm_both`.
 
-The class order is alphabetical and is printed at the start of training (`classes: {...}`). You need it in the next step.
+Training results:
 
 ![Alt text](images/odenet-result.png?raw=true "ODENet training results")
 
@@ -300,16 +304,20 @@ The class order is alphabetical and is printed at the start of training (`classe
 .venv/bin/python3 predict.py capture.pcap --ckpt best_ode_n20.pt --classes BROWSING,CHAT,FILE_TRANSFER,STREAMING
 ```
 
-![Alt text](images/Browsing-predict.png?raw=true "Browsing external capture")
-![Alt text](images/Chat-predict.png?raw=true "Chat external capture")
-![Alt text](images/File_transfer-predict.png?raw=true "File transfer external capture")
-![Alt text](images/streaming-predict.png?raw=true "Streaming external capture")
-
 The script prints the longest flows with their predicted class and confidence, and a summary with the share of traffic per class.
 
 - `--classes` must follow the training order. It can be omitted if the checkpoint already stores the class names.
 - `--n` must match the value used in training (default 20).
 - A `.csv` file in the same format as the training CSVs is also accepted as input.
+
+Browsing capture testing:
+![Alt text](images/Browsing-predict.png?raw=true "Browsing external capture")
+Chat capture testing:
+![Alt text](images/Chat-predict.png?raw=true "Chat external capture")
+File transfer capture testing:
+![Alt text](images/File_transfer-predict.png?raw=true "File transfer external capture")
+Streaming capture testing:
+![Alt text](images/streaming-predict.png?raw=true "Streaming external capture")
 
 > **Note:** a capture must be converted the same way as the training data (same packet-size definition and protocols), otherwise the predictions degrade. The model always picks one of its own classes, so unrelated traffic (DNS, telemetry) is also assigned a class.
 
@@ -328,3 +336,5 @@ I also contributed by adding 80+ network traffic files for the project. This was
 
 Additionally, I arranged the meetings with the group. 
 
+## Lorenzo Fallani
+My contribution to the project involved setting up the cloud infrastructure on Microsoft Azure and installing and configuring the necessary packages and dependencies for the FTPS and SCP servers running on the cloud machine. I also developed the CSV parser in Python, which converts CSV traffic captures into a list of features. Another important part of my work was collecting CHAT and FILE_TRANSFER traffic data through manual testing and custom scripts, helping to build the dataset used to train and evaluate our classification models. In addition, I investigated the limitations of our FTPS experimental setup and analyzed some of the challenges associated with using the Random Forest model as a baseline for encrypted traffic classification. I also contributed to the development of the ODENet model, using AI-assisted tools during implementation and adapting the architecture and data-processing pipeline described in the paper “Fast and Lean Encrypted Internet Traffic Classification” to better fit our dataset and experimental requirements. Finally, I helped prepare and organize the GitHub repository, making sure that the code, scripts, and documentation were structured clearly and that the project setup.
