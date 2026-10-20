@@ -164,9 +164,78 @@ Since audio can be considered a particular case of streaming, we decided to **me
  
 ## How to Run the Code/ Documentation of Testing the Project
 
-### Build and test on the Random Forest Classification model
+### Build and test the Random Forest Classification model
 
-TODO
+## Requirements
+ 
+- Python 3.11 – 3.13
+- Dependencies: `scikit-learn`, `pandas`, `scapy`, `joblib`
+## Dataset Layout
+ 
+Place your capture files anywhere inside the `dataset/` directory of /ODENet. Since both the ODENet and the random forest are trained on the same data set, this avoids uploading the large traffic capture files twice. The class label is taken from a keyword in the **file name**:
+ 
+| Keyword in file name | Label |
+|---|---|
+| `browse` | BROWSING |
+| `chat` | CHAT |
+| `file` | FILE TRANSFER |
+| `streaming` | STREAMING |
+ 
+Example:
+ 
+```text
+dataset/
+├── browse_001.pcapng
+├── chat_001.pcapng
+├── file_transfer_ftps_001.pcapng
+└── streaming_001.pcapng
+```
+## 1. Set up the Environment
+ 
+Create a virtual environment and install the dependencies:
+ 
+```bash
+cd RandomForest
+python -m venv .venv
+.venv/bin/python3 -m pip install -r requirements.txt
+```
+
+## Training the Model
+
+Ensure the `dataset_dir` path in line 17 in `random_forest_classifier.py` points correctly to the `dataset/` folder. Then run the training script:
+
+```bash
+python random_forest_classifier.py
+```
+
+This script does the following:
+- First, it reads every `.pcap` / `.pcapng` file in the specified directory (and subdirectories) with scapy and extracts TCP and UDP packets. These are grouped into bidirectional flows, with the side opening the connection being the `forward` direction.
+- Flows with fewer than 20 packets are discarded, to avoid background noise decreasing the models accuracy (DNS lookups and so on)
+- Afterwards, the parser computes 19 features per flow, among them the number of packets, bytes transferred, packet sizes, flow duration and inter-arrvial times and bursts.
+- Then 80% of the captures are used for training the model and the other 20% for validation. By using a `GroupShuffleSplit` we make sure to only use 80% of FILES for training and not use some flows of the same file for training and validation.
+- Then the script applies a `StandardScaler` and starts the training process.
+- After finishing training, the model is evaluated on the remaining 20% of the dataset. After evaluation, it prints accuracy, a classification report, the confusion matrix and feature importances.
+- To be able to reuse the model quickly, without training it every time, the script saves the models weights, the scaler and the feature names.
+
+## Classifying additional captures
+
+To classify a new, unseen capture, set the `test_file` path in `predictor.py` and run:
+
+```bash
+python predictor.py
+```
+
+This script uses the trained, saved model to evaluate and classify this new capture.
+
+- Therefore it first loads the saved model `rf_model.joblib`, `scaler.joblib`, and `feature_names.joblib`, so features are named and scaled exactly as during testing.
+
+- Similar to the training script, the capture is parsed, and its features extracted. 
+- Then the script classifies each flow and prints per-flow predictions
+- Finally the flow predictions are combined into one prediction for the whole capture, with that prediction being the label most of the flows have been classified with. This is used, because many activities like browsing have streaming-like side-channels, for example loading a large ad while visiting a website. By only predicting the mostly predicted label, these other connections are filtered out. 
+
+## Limitations
+This filtering process is vulnerable to many concurrent small connections while doing the specified activity. For example, if the network traffic capture is supposed to capture streaming, but there are 5 or more smaller connection loading ads or cookie banners, these 5 connections may be labeled as browsing. This will cause the whole file to be labeled as browsing, because only the one flow that captures all the actual video streaming traffic will be labeled as streaming, rendering the vote 1:5 for browsing.
+
 
 ## ODENet: build, train and test
 
