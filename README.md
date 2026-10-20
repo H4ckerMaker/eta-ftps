@@ -17,6 +17,10 @@ The comparison aims not only to evaluate classification performance but also to 
 | Messaging | Chat applications (e.g. WhatsApp, Telegram, Discord) |
  
 Application payloads are **never decrypted**. Classification relies only on metadata that is visible to an observer on the network.
+
+## Motivation
+
+Modern Web Traffic can be susceptible to adversarial attacks, even when encrypted. In the past, papers have shown, that it is feasible to recover information about what a user types, such as passwords, over SSH just by utilizing network traffic analysis (Song et al., 2001). Nowadays, techniques like website fingerprinting attacks can infer which websites a user visits from encrypted traffic (Deng et al., 2026), strongly decreasing user privacy. To properly analyze user traffic though, an adversary would benefit from first recognizing the current users action and classify them, before applying a more advanced attack, for example, narrow down the specific website the user was visiting. Thus, in this project we focus on this first step of classifying a users traffic into the above-mentioned categories.
  
 ## Preliminary observations
 
@@ -71,14 +75,14 @@ We built a parser that splits each capture file into individual flows and extrac
 
 ### 3. Baseline: Random Forest
 
-As a simple baseline, we trained a Random Forest classifier to distinguish the four traffic categories.
+As a simple baseline, we trained a Random Forest classifier to distinguish the four traffic categories. We chose a random forest, because Lashkari et al. (2017) proved it to outperform other simple classifiers, such as a k-NN model.
 
 - Training: each capture is split into flows, and every flow is represented by its three features. The model is trained on these flow-level samples, using the category of the capture as the label.
 - Validation: for each capture, the model classifies every flow individually. When evaluating the whole capture, the capture is assigned to the category that receives the most votes (majority voting). This approach of course has its limitations, which we will explain further.
 
 #### 3.1. Limitations: Overfitting
 
-When evaluated the model on a portion of our own dataset, the model reached a high accuracy (**0.9807**). However, when tested on new captures from real sessions recorded independently, the accuracy dropped drastically (**0.5322**). This indicates that the model was **overfitting** the training set.
+When evaluated the model on a portion of our own dataset, the model reached a high accuracy (**0.95-0.9807**). However, when tested on new captures from real sessions recorded independently, the accuracy dropped drastically (**0.5322**). This indicates that the model was **overfitting** the training set.
 
 We realised that the three initial features do not describe the *behaviour of the protocol*, but only the **volume of data** and the **length of the session**. As a result, the classifier can be easily misled: a 40-second session of one category may look very similar to a 40-second session of another, while two sessions of the same category with different durations (e.g. 2 s and 40 s) may be assigned to different classes.
 
@@ -144,7 +148,7 @@ Both models were trained and evaluated on the same data and compared on previous
 
 | Model | Input | Full sessions (accuracy) | Partial captures (accuracy) |
 |---|---|---|---|
-| Random Forest | 19 aggregated flow features | 0.98 | 0.40 |
+| Random Forest | 19 aggregated flow features | 0.95-0.98 | 0.40 |
 | ODE-LSTM | Packet sequence (size, inter-arrival time) | N/A | 0.9088 |
 
 **Evaluation setup.** The test set consists of real captures recorded independently from the training data. We evaluated Random Forest in two scenarios:
@@ -158,7 +162,7 @@ and ODE-LSTM on just one scenario:
 
 ## Results
 
-On complete sessions, the Random Forest achieved a very high accuracy of 98% when using 19 features. Introducing Burst-sizes as a feature proved to be critically important, because it increased classification accuracy on previously unseen files substantially. As detailed previously, the accuracy dropped significantly, when providing truncated captures, depending on the files and the truncated parts. The ODE-LSTM in turn proved to be very accurate while only requiring very few packets.
+On complete sessions, the Random Forest achieved a very high accuracy of 95-98% when using 19 features. Introducing Burst-sizes as a feature proved to be critically important, because it increased classification accuracy on previously unseen files substantially. As detailed previously, the accuracy dropped significantly, when providing truncated captures, depending on the files and the truncated parts. The ODE-LSTM in turn proved to be very accurate while only requiring very few packets.
 
 Overall, these results suggest that sequence-based models are better suited to realistic, real-time traffic analysis, while aggregated features are sufficient only when the full session is available.
  
@@ -345,6 +349,19 @@ Roy, S., Shapira, T., & Shavitt, Y. (2022). Fast and lean encrypted Internet tra
 
 Lu, G. et al. (2012) ‘Comparison and Analysis of Flow Features at the Packet Level for Traffic Classification’, in 2012 International Conference on Connected Vehicles and Expo (ICCVE). [Online]. December 2012 IEEE. pp. 262–267.
 
+Song, D. X., Wagner, D., & Tian, X. (2001). Timing analysis of keystrokes and timing attacks on SSH. In *Proceedings of the 10th USENIX Security Symposium*. USENIX Association.
+
+Deng, X., Zhang, Y., Li, Q., Liu, Z., Wang, Y., & Xu, K. (2026). Enhancing website fingerprinting attacks against traffic drift. In *Proceedings of the Network and Distributed System Security (NDSS) Symposium 2026*. https://doi.org/10.14722/ndss.2026.230059
+
+Lashkari, A. H., Draper-Gil, G., Mamun, M. S. I., & Ghorbani, A. A. (2017). Characterization of Tor traffic using time based features. In *Proceedings of the 3rd International Conference on Information Systems Security and Privacy (ICISSP 2017)* (pp. 253–262). SCITEPRESS. https://doi.org/10.5220/0006105602530262
+
+## Declaration of AI Usage
+
+- AI was used to generate code for the ODENet model, which we used to evaluate our simple classifier against.
+- AI (Grammarly) was used to check for grammar or spelling errors.
+- AI was also used to search literature for the best, simpel classifier for network traffic analysis. (Example Prompt: Search for academic papers comparing simpel classifier models against each other for the task of network traffic analysis).
+
+All AI generate code were checked by the group to ensure its correctness. All AI-suggested references were reviewed and evaluated by the group, and the literature review was subsequently broadened through independent research by each team member.
 
 ### 5. Own contributions
 
@@ -361,6 +378,3 @@ My contribution to the project involved setting up the cloud infrastructure on M
 ## Fabian Baus
 My contribution to the project involved initially capturing FTPS-Download traffic and subsequently implementing a first small classifier to distinguish the traffic. When it became apparent, that this task would either be too trivial (based on different file sizes) or too difficult to implement (same file size), 
 Lorenzo and I had the idea of pivoting our approach to instead focus on distinguishing different kinds of traffic. After sharing this with the group and continuing with this new idea, I developed the Random Forest classifier to classify the different kinds of traffic. This also included substantially modifying the parser initially provided by Sam to include many more features, like burst sizes, which were important for the classifier's accuracy. In addition to that, I implemented the predictor, which loads the saved, trained model and reads a new, captured file. Then it outputs the models prediction about the class of this new file. Along with implementing the code, in collaboration with Lorenzo I developed the feature set to extract and tested the model on different data sets. For that we first evaluated the dataset of the University of New Brunswick (UNB): ‘‘ISCX VPN-nonVPN traffic dataset’’ (ISCX-VPN), due to it containing many captures, but when we realized they greatly differ from our own captures in important metrics like inter-arrival times and durations, we opted to capture all the data on our own, with the effort split within the group. Then we evaluated different feature sets, to finally arrive at a reliable feature set, that in addition to the training data also reliably recognizes new captures. For this we evaluated the `predictor.py` with different new captures, testing whether the predicted label matched the intended category. Finally, I also contributed to the project report and documentation.
-
-## Samuel Ritter
-My contributions to the project were initially a Python parser and feature extractor to process captured network traffic. The script extracted information from packet captures and structured the packets into flows, from which features such as packet sizes and inter-arrival times could be extracted. These features came from the research Ella had done and were intended to be used as initial classification model input, and was the feature set which helped identify the limitations of our previous approach. From there on a significant part of my work was data collection as I collected network traffic captures used for training and evaluating our classification models. These network captures ranged from streaming, to browsing to chat with the bulk part of the work invested in video streaming captures. This was done by setting up the video hosting server along with its encryption, preparing video files, transferring them to our server, converting them into HLS streamable formats and making repeated captures to collect enough data with varying patterns and duration. 
