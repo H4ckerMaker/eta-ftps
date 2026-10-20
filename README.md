@@ -269,10 +269,10 @@ python3 -m venv .venv
 ### 2. Convert the PCAP files to CSV
 
 ```bash
-.venv/bin/python3 pcap_to_csv.py dataset/CHAT --name my_chat
-.venv/bin/python3 pcap_to_csv.py dataset/STREAMING --name my_streaming
-.venv/bin/python3 pcap_to_csv.py dataset/BROWSING --name my_browsing
-.venv/bin/python3 pcap_to_csv.py dataset/FILE_TRANSFER --name my_filetransfer
+.venv/bin/python3 pcap_to_csv.py ../dataset/CHAT --name my_chat
+.venv/bin/python3 pcap_to_csv.py ../dataset/STREAMING --name my_streaming
+.venv/bin/python3 pcap_to_csv.py ../dataset/BROWSING --name my_browsing
+.venv/bin/python3 pcap_to_csv.py ../dataset/FILE_TRANSFER --name my_filetransfer
 ```
 
 Each CSV row is one unidirectional flow (5-tuple). The files are written to `classes_csvs/<class>/reg/<name>.raw.csv`.
