@@ -292,11 +292,18 @@ The best checkpoint is saved as `best_<model>_n<n>.pt` (e.g. `best_ode_n20.pt` f
 
 The class order is alphabetical and is printed at the start of training (`classes: {...}`). You need it in the next step.
 
+![Alt text](images/odenet-result?raw=true "ODENet training results")
+
 ### 4. Classify an external capture
 
 ```bash
 .venv/bin/python3 predict.py capture.pcap --ckpt best_ode_n20.pt --classes BROWSING,CHAT,FILE_TRANSFER,STREAMING
 ```
+
+![Alt text](images/Browsing-predict?raw=true "Browsing external capture")
+![Alt text](images/Chat-predict?raw=true "Chat external capture")
+![Alt text](images/File_transfer-predict?raw=true "File transfer external capture")
+![Alt text](images/streaming-predict?raw=true "Streaming external capture")
 
 The script prints the longest flows with their predicted class and confidence, and a summary with the share of traffic per class.
 
