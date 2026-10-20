@@ -1,6 +1,8 @@
 from scapy.all import rdpcap, IP, TCP, UDP
 import statistics
 
+# Time gap that separates two distinct bursts
+BURST_THRESHOLD = 1.0  
 
 # Return all inter_arrival_times for packets in flow
 def inter_arrival_times(packets):
@@ -8,6 +10,31 @@ def inter_arrival_times(packets):
         packets[i]["timestamp"] - packets[i - 1]["timestamp"]
         for i in range(1, len(packets))
     ]
+
+# Group packets into bursts based on interarrival time threshold
+def calculate_bursts(packets, threshold=BURST_THRESHOLD):
+    if not packets:
+        return [], []
+
+    bursts = []
+    idle_times = []
+    current_burst = [packets[0]]
+
+    for i in range(1, len(packets)):
+        iat = packets[i]["timestamp"] - packets[i - 1]["timestamp"]
+        if iat <= threshold:
+            # Packet arrived quickly still part of the current burst
+            current_burst.append(packets[i])
+        else:
+            # Silence gap exceeded threshold close burst and record idle time
+            bursts.append(current_burst)
+            idle_times.append(iat)
+            current_burst = [packets[i]]
+
+    if current_burst:
+        bursts.append(current_burst)
+
+    return bursts, idle_times
 
 #(src_ip:src_port, dst_ip:dst_port) for a packet
 def flow_key(packet):
@@ -23,16 +50,20 @@ def flow_key(packet):
 
 # return features for a flow
 def extract_features(flow):
-
     packets = flow["packets"]
     lengths = [p["length"] for p in packets]
     iats = inter_arrival_times(packets)
+    
     forward = [
         p for p in packets if p["direction"] == "forward"
     ]
     backward = [
         p for p in packets if p["direction"] == "backward"
     ]
+
+    bursts, idle_times = calculate_bursts(packets)
+    burst_bytes = [sum(p["length"] for p in b) for b in bursts]
+
     features = {
         "packet_count": len(packets),
         "total_bytes": sum(lengths),
@@ -58,6 +89,11 @@ def extract_features(flow):
         ),
         "min_iat": min(iats) if iats else 0,
         "max_iat": max(iats) if iats else 0,
+        
+        "burst_count": len(bursts),
+        "mean_burst_bytes": statistics.mean(burst_bytes) if burst_bytes else 0,
+        "max_burst_bytes": max(burst_bytes) if burst_bytes else 0,
+        "mean_idle_time": statistics.mean(idle_times) if idle_times else 0,
     }
     return features
 
@@ -106,7 +142,7 @@ def build_flows(packets):
             }
         flows[key]["packets"].append(packet)
         
-    for flow in flows.values():
+    for flow in flows.values():        
         initiator = None
         for packet in flow["packets"]:
             if packet["protocol"] == "TCP":

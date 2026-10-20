@@ -3,6 +3,7 @@ import pandas as pd
 from scapy.all import rdpcap
 import parser.pcap_parser as parser
 
+MIN_PACKETS = 20
 def predict_pcap(file_path):
     print("Load model and classifiers")
     classifier = joblib.load('rf_model.joblib')
@@ -21,6 +22,8 @@ def predict_pcap(file_path):
     network_flows = []
     for flow in flows.values():
         features = parser.extract_features(flow)
+        if features["packet_count"] < MIN_PACKETS:
+            continue
         network_flows.append(features)
 
     df = pd.DataFrame(network_flows)
@@ -42,5 +45,5 @@ def predict_pcap(file_path):
     print(f"Predicted activity for this capture: {majority_label}")
     
 if __name__ == "__main__":
-    test_file = r"C:\Users\Fabian\Documents\Uni\Master\1. Semester\Period 1\Cybersecurity Overview\Cybersecurity Overview Project\eta-ftps\RandomForest\file_transfer_ftps_01.pcapng"
+    test_file = r"c:\Users\Fabian\Documents\Uni\Master\1. Semester\Period 1\Cybersecurity Overview\Cybersecurity Overview Project\eta-ftps\RandomForest\netflix_002.pcapng"
     predict_pcap(test_file)

@@ -10,6 +10,8 @@ from pathlib import Path
 from sklearn.model_selection import GroupShuffleSplit
 import joblib
 
+
+MIN_PACKETS = 20
 network_flows = []
 
 dataset_dir = Path(r"C:\Users\Fabian\Documents\Uni\Master\1. Semester\Period 1\Cybersecurity Overview\Cybersecurity Overview Project\eta-ftps\ODENet (AI)\dataset")
@@ -30,15 +32,13 @@ for file_path in files:
     if "streaming" in filename:
         label = "STREAMING"
         
-    try:
-        capture = rdpcap(str(file_path))
-    except Exception as e:
-        print(f"Skipping {file_path.name} - Not a valid capture file. Error: {e}")
-        continue
+    capture = rdpcap(str(file_path))
     packets = parser.extract_packets(capture)
     flows = parser.build_flows(packets)
     for flow in flows.values():
         features = parser.extract_features(flow)
+        if features["packet_count"] < MIN_PACKETS:
+            continue
         features["label"] = label 
         features["filename"] = filename
         network_flows.append(features)
@@ -67,10 +67,10 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 classifier = RandomForestClassifier(
-    n_estimators=120, 
+    n_estimators=150, 
     max_features='sqrt',
     random_state=42,
-    max_depth=25,
+    max_depth=30,
     n_jobs=-1, 
 )
 
