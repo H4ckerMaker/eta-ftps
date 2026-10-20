@@ -14,7 +14,7 @@ import joblib
 MIN_PACKETS = 20
 network_flows = []
 
-dataset_dir = Path(r"C:\Users\Fabian\Documents\Uni\Master\1. Semester\Period 1\Cybersecurity Overview\Cybersecurity Overview Project\eta-ftps\ODENet (AI)\dataset")
+dataset_dir = Path(r"..\dataset")
 files = list(dataset_dir.rglob("*.pcap")) + list(dataset_dir.rglob("*.pcapng"))
 #print(files)
 print(len(files))

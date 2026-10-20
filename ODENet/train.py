@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-from Parser.csv_parser import extract_features
+from parser.csv_parser import extract_features
 from data import make_label_map, split_by_flow, build_blocks, undersample
 from models import LSTMBaseline, ODELSTM
 
