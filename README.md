@@ -52,13 +52,13 @@ To address this limitation, we drew inspiration from previous work project on en
  
 For each category we captured repeated experiments and saved the traffic as `.pcap` files.
  
-For the **streaming** class, we recorded some audio clips, then uploaded them to our server and split them into random sized audio snippets. We then listened to the audio snippets on our computer whilst using tcpdump on the server to record the traffic. Additionally, for the video streaming we TODO 
+For the **streaming** class, we recorded some audio clips, then uploaded them to our server and split them into random sized audio snippets. We then listened to the audio snippets on our computer whilst using tcpdump on the server to record the traffic. Additionally, for the video streaming we configured an Nginx server to host video files using HTTP Live Streaming (HLS). The videos were divided into segments and made accessible through .m3u8 playlists. The server used HTTPS on port 443, with a self-signed TLS certificate to encrypt communication. For each video file, we captured the traffic on port 443 and requested the video from the server.
 
 For the **file transfer** class, we used a script to create and upload/download random files to our server using different protocols such as scp and ftps.
 
 For the **messanging** class, we used tcpdump to record different sessions of chatting using chat web apps such as: discord, whatsapp and telegram.
 
-For the **web browsing**, TODO
+For the **web browsing**, we used tcpdump to record different sessions of browsing the internet and visiting websites.
 
 ### 2. Feature extraction: parsing
 
