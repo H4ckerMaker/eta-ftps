@@ -120,22 +120,47 @@ Instead of aggregated statistics, this method uses only **two per-packet feature
 - inter-arrival time
 
 These are fed as a time series to a **Neural ODE combined with an LSTM**. The ODE uses the inter-arrival times to model how the hidden state of the flow evolves between packets, which makes the model well suited to irregularly spaced events such as network traffic. 
+
+The model performed well also on the **external real-world truncated captures** of incomplete sessions (acc: 0.9)
  
 ### 6. Comparison
- 
+
 Both models were trained and evaluated on the same data and compared on previously unseen traces.
- 
+
+| Model | Input | Full sessions (accuracy) | Partial captures (accuracy) |
+|---|---|---|---|
+| Random Forest | 11 aggregated flow features | **TODO** | **TODO** |
+| ODE-LSTM | Packet sequence (size, inter-arrival time) | N/A | **TODO** |
+
+**Evaluation setup.** The test set consists of real captures recorded independently from the training data. We evaluated both models in two scenarios:
+
+- **Full sessions:** each capture contains the entire session, from start to end.
+- **Partial captures:** each capture is truncated, simulating an attacker who starts or stops sniffing at an arbitrary point of the session.
+
 ## Results
+
+On complete sessions, **TODO: summarise the result (e.g. both models perform comparably well)**. The difference emerges on partial captures: the Random Forest, which relies on session-level statistics, **TODO: accuracy drop**, while the ODE-LSTM, which works directly on the packet sequence, **TODO: result**.
+
+Overall, these results suggest that sequence-based models are better suited to realistic, real-time traffic analysis, while aggregated features are sufficient only when the full session is available.
  
-| Model | Accuracy |
-|-------|----------|
-| Random Forest (baseline) | _[add value]_ |
-| ODE-LSTM | **~90%** |
- 
-The accuracy of both the ODE-LSTM model and the Random Forest model is measured on our own dataset.
- 
-### Known difficulties
- 
+### Known difficulties and observations
+
+While deciding which features to extract for our Random Forest classifier, we inspected the `.pcap` captures in detail and noticed two issues in our dataset.
+
+#### 1. Heterogeneous behaviour within the CHAT category
+
+The CHAT category includes three web apps: **Discord**, **WhatsApp** and **Telegram**. Their traffic patterns differ:
+
+- **Discord and WhatsApp** are *event-driven*: the server sends packets to the client only when a new message is received, and the client sends packets only when a message is sent.
+- **Telegram** exchanges packets *continuously*, even when no message is sent or received, which looks like a keep-alive (heartbeat) mechanism. Sending or receiving a message only produces packets of a larger size.
+
+For Telegram, the inter-arrival time is therefore not informative, and only packet size carries a useful signal. This heterogeneity is the likely reason why CHAT is the category with the slightly lower accuracy.
+
+#### 2. Merging AUDIO into STREAMING
+
+The project initially had **five categories**, including a separate AUDIO class. With five classes, the model frequently confused AUDIO and STREAMING. Both categories consist of a server sending a continuous, one-directional flow of media data to the client, typically in regularly spaced chunks, so their size and timing patterns are very similar and hard to separate with our features.
+
+Since audio can be considered a particular case of streaming, we decided to **merge AUDIO into STREAMING**, ending up with four categories.
  
 ## How to Run the Code/ Documentation of Testing the Project
 
